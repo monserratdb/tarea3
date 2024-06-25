@@ -2,37 +2,36 @@ import gurobipy as gp
 from gurobipy import GRB
 import pandas as pd
 
-# Leer datos del archivo CSV
+# Cargar los datos del archivo CSV
 data = pd.read_csv('muestras.csv')
-X = data.iloc[:, :-1].values  # Características
-Y = data.iloc[:, -1].values   # Valores de relleno
 
-# Características seleccionadas en la Parte 2
-selected_features = [1, 3, 5, 7, 9]  # Ejemplo de índices de las características seleccionadas
+# Extraer las variables X (inputs) y Y (output)
+X = data.iloc[:, :-1].values  # Las primeras 15 columnas
+Y = data.iloc[:, -1].values  # La última columna
+
+# Importar las características importantes de la Parte 2
+important_features = [0, 1, 2, 3, 4]  # Ejemplo, ajuste según resultados de main2.py
 
 # Crear el modelo
-model = gp.Model("linear_regression_final")
+model = gp.Model("regresion_lineal_reducida")
 
-# Variables de decisión
-w = model.addVars(len(selected_features), lb=-GRB.INFINITY, ub=GRB.INFINITY, name="w")
-b = model.addVar(lb=-GRB.INFINITY, ub=GRB.INFINITY, name="b")
-error = model.addVars(len(X), lb=0, ub=GRB.INFINITY, name="error")
+# Variables
+w = model.addVars(len(important_features), lb=-GRB.INFINITY, name="w")
+b = model.addVar(lb=-GRB.INFINITY, name="b")
 
-# Función objetivo: minimizar el error cuadrático
-model.setObjective(gp.quicksum(error[r] * error[r] for r in range(len(X))), GRB.MINIMIZE)
-
-# Restricciones: calcular el error para cada muestra
+# Función objetivo
+objective = gp.QuadExpr()
 for r in range(len(X)):
-    model.addConstr(error[r] == b + gp.quicksum(w[i] * X[r, selected_features[i]] for i in range(len(selected_features))) - Y[r])
+    error = b + sum(w[j] * X[r, i] for j, i in enumerate(important_features)) - Y[r]
+    objective.add(error * error)
+model.setObjective(objective, GRB.MINIMIZE)
 
 # Optimizar el modelo
 model.optimize()
 
-# Imprimir los resultados
-print("Modelo final de regresión lineal:")
-print("Y =", " + ".join(f"{w[i].X} * x{selected_features[i]+1}" for i in range(len(selected_features))), f"+ {b.X}")
-
-for i in range(len(selected_features)):
-    print(f"x{selected_features[i]+1}: {data.columns[selected_features[i]]}")
-print(f"Y: Relleno óptimo de la almohada (gramos)")
-
+# Imprimir el modelo final
+model_string = "Y = " + " + ".join([f"{w[j].X:.2f} * x{important_features[j]+1}" for j in range(len(important_features))]) + f" + {b.X:.2f}"
+print(f'Modelo final: {model_string}')
+for j, i in enumerate(important_features):
+    print(f'x{i+1} ({data.columns[i]}): {w[j].X}')
+print(f'Término constante b: {b.X}')
