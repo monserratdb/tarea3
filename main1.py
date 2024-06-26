@@ -26,6 +26,9 @@ if model.status == GRB.OPTIMAL:
     # Imprimir los resultados
     for i in range(len(X[0])):
         print(f"w_{i+1} (característica {data.columns[i]}): {w[i].X}")
-    print(f"b (constante): {b.X}")
+    print(f"b (constante): {b.X} gramos")
 else:
     print("No se encontró una solución óptima")
+
+optimal_value = model.ObjVal
+print(f"Valor óptimo: {optimal_value:.3f}")
