@@ -1,6 +1,5 @@
 import gurobipy as gp
 import pandas as pd
-import numpy as np
 
 # CORRER EL CODIGO EN LA MISMA CARPETA EN QUE SE TIENE muestras.csv
 
